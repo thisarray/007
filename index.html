@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>007</title>
+  <script src="../jsgame0.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+#original {
+  margin-left: 1em;
+}
+  </style>
+</head>
+
+<body>
+<section id="imageLoader" class="hidden">
+  <img class="hidden" src="images/stand1.png" alt="stand1" data-name="stand1">
+  <img class="hidden" src="images/walkleft1.png" alt="walkleft1" data-name="walkleft1">
+  <img class="hidden" src="images/walkleft2.png" alt="walkleft2" data-name="walkleft2">
+</section>
+
+<main>
+<h1>007</h1>
+
+<canvas id="screen">
+The game screen appears here if your browser supports the Canvas API.
+</canvas>
+<section id="controls">
+  <button type="button" id="reset">Reset</button>
+  <button type="button" id="pause">Pause</button>
+</section>
+
+<h2>Attribution</h2>
+
+<p>Images licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/legalcode">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported</a>.</p>
+
+</main>
+
+<script>
+WIDTH = 640;
+HEIGHT = 480;
+
+/*
+ * Duration in seconds to stay on each frame.
+ */
+const ANIMATION_RATE = 0.1;
+
+/*
+ * Color to use for the partly transparent blood.
+ */
+const BLOOD_COLOR = [255, 0, 0, 96];
+
+/*
+ * Integer y-coordinate of the middle of the screen.
+ */
+const HALF_HEIGHT = Math.floor(HEIGHT / 2);
+
+/*
+ * Integer length of the radius in pixels.
+ * Also half of the length of the radius of the barrel.
+ */
+const RADIUS = 40;
+
+/*
+ * Integer number of pixels to traverse in a second.
+ */
+const WALK_RATE = WIDTH / 10;
+
+class AnimatedActor extends Actor {
+  constructor(prefix, frameCount, startIndex = 1) {
+    if (typeof prefix !== 'string') {
+      throw new TypeError('prefix must be a non-empty string.');
+    }
+    if (prefix.length <= 0) {
+      throw new RangeError('prefix must be a non-empty string.');
+    }
+    if (typeof frameCount !== 'number') {
+      throw new TypeError('frameCount must be a positive number.');
+    }
+    if (frameCount <= 0) {
+      throw new RangeError('frameCount must be a positive number.');
+    }
+    if (typeof startIndex !== 'number') {
+      throw new TypeError('startIndex must be a positive number <= frameCount.');
+    }
+    if (startIndex <= 0) {
+      throw new RangeError('startIndex must be a positive number <= frameCount.');
+    }
+    if (startIndex > frameCount) {
+      throw new RangeError('startIndex must be a positive number <= frameCount.');
+    }
+    super(prefix + startIndex);
+
+    this.prefix = prefix;
+    this.frameCount = frameCount;
+    this.timer = 0;
+    this.index = startIndex;
+  }
+
+  update(dt) {
+    this.timer += dt;
+
+    if (this.timer > ANIMATION_RATE) {
+      this.timer = 0;
+      this.index += 1;
+      if (this.index > this.frameCount) {
+        this.index = 1;
+      }
+      this.name = this.prefix + this.index;
+    }
+  }
+}
+
+var blood, bond, circle;
+
+function reset() {
+  circle = new Rect(0, HALF_HEIGHT - RADIUS, RADIUS * 2, RADIUS * 2);
+  circle.animation = animate(circle, (WIDTH / WALK_RATE) / 2, {x: WIDTH}, 'linear');
+
+  bond = new AnimatedActor('walkleft', 2);
+  // Start at the right edge plus extra while the circle is moving across the screen
+  bond.left = WIDTH + (WIDTH / 2) + (RADIUS * 2);
+  bond.centery = HALF_HEIGHT;
+  bond.animation = animate(bond, (bond.centerx - Math.floor(WIDTH / 2)) / WALK_RATE, {centerx: Math.floor(WIDTH / 2)}, 'linear');
+
+  blood = new Rect(0, 0, WIDTH, 0);
+}
+
+function shoot() {
+  blood.animation = animate(blood, (HEIGHT / WALK_RATE) / 4, {height: HEIGHT}, 'linear');
+}
+
+function draw() {
+  screen.fill('black');
+  if (circle.left < WIDTH) {
+    screen.draw.filled_circle([(Math.floor(circle.left / 100) * 100) + RADIUS, HALF_HEIGHT], RADIUS, 'white');
+    screen.draw.filled_circle(circle.center, RADIUS, 'white');
+  }
+  screen.draw.filled_circle(bond.center, RADIUS * 2, 'white');
+  bond.draw();
+  screen.draw.filled_rect(blood, BLOOD_COLOR);
+}
+
+function update(dt) {
+  bond.update(dt);
+  if (bond.animation.done) {
+    bond.prefix = 'stand';
+    bond.frameCount = 1;
+    clock.schedule(shoot, 1.5);
+  }
+}
+
+window.addEventListener('load', (event) => {
+  images.LOAD('#imageLoader img');
+  reset();
+  screen.set_mode('#screen', '#reset', '#pause');
+});
+</script>
+</body>
+
+</html>
