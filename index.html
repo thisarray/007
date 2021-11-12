@@ -59,6 +59,11 @@ const ANIMATION_RATE = 0.1;
 const BLOOD_COLOR = [255, 0, 0, 96];
 
 /*
+ * Integer x-coordinate of the middle of the screen.
+ */
+const HALF_WIDTH = Math.floor(WIDTH / 2);
+
+/*
  * Integer y-coordinate of the middle of the screen.
  */
 const HALF_HEIGHT = Math.floor(HEIGHT / 2);
@@ -119,7 +124,7 @@ class AnimatedActor extends Actor {
   }
 }
 
-var blood, bond, circle;
+var barrel, blood, bond, circle;
 
 function reset() {
   circle = new Rect(0, HALF_HEIGHT - RADIUS, RADIUS * 2, RADIUS * 2);
@@ -127,15 +132,30 @@ function reset() {
 
   bond = new AnimatedActor('walkleft', 2);
   // Start at the right edge plus extra while the circle is moving across the screen
-  bond.left = WIDTH + (WIDTH / 2) + (RADIUS * 2);
+  bond.left = WIDTH + HALF_WIDTH + (RADIUS * 2);
   bond.centery = HALF_HEIGHT;
-  bond.animation = animate(bond, (bond.centerx - Math.floor(WIDTH / 2)) / WALK_RATE, {centerx: Math.floor(WIDTH / 2)}, 'linear');
+  bond.animation = animate(bond, (bond.centerx - HALF_WIDTH) / WALK_RATE, {centerx: HALF_WIDTH}, 'linear', stand);
 
   blood = new Rect(0, 0, WIDTH, 0);
+  barrel = new Rect(HALF_WIDTH - RADIUS, HALF_HEIGHT - RADIUS, RADIUS * 2, RADIUS * 2);
+}
+
+function stand() {
+  bond.prefix = 'stand';
+  bond.frameCount = 1;
+  clock.schedule(shoot, 1.5);
 }
 
 function shoot() {
-  blood.animation = animate(blood, (HEIGHT / WALK_RATE) / 4, {height: HEIGHT}, 'linear');
+  blood.animation = animate(blood, (HEIGHT / WALK_RATE) / 4, {height: HEIGHT}, 'linear', move_barrel);
+}
+
+function move_barrel() {
+  let endX = HALF_WIDTH - RADIUS;
+  if (barrel.centerx < HALF_WIDTH) {
+    endX = HALF_WIDTH + RADIUS;
+  }
+  barrel.animation = animate(barrel, Math.abs(barrel.centerx - endX) / WALK_RATE, {centerx: endX}, 'linear', move_barrel);
 }
 
 function draw() {
@@ -144,18 +164,18 @@ function draw() {
     screen.draw.filled_circle([(Math.floor(circle.left / 100) * 100) + RADIUS, HALF_HEIGHT], RADIUS, 'white');
     screen.draw.filled_circle(circle.center, RADIUS, 'white');
   }
-  screen.draw.filled_circle(bond.center, RADIUS * 2, 'white');
+  if ((blood.animation != null) && blood.animation.done) {
+    screen.draw.filled_circle(barrel.center, RADIUS * 2, 'white');
+  }
+  else {
+    screen.draw.filled_circle(bond.center, RADIUS * 2, 'white');
+  }
   bond.draw();
   screen.draw.filled_rect(blood, BLOOD_COLOR);
 }
 
 function update(dt) {
   bond.update(dt);
-  if (bond.animation.done) {
-    bond.prefix = 'stand';
-    bond.frameCount = 1;
-    clock.schedule(shoot, 1.5);
-  }
 }
 
 window.addEventListener('load', (event) => {
