@@ -26,6 +26,9 @@ body {
   <img class="hidden" src="images/walkleft1.png" alt="walkleft1" data-name="walkleft1">
   <img class="hidden" src="images/walkleft2.png" alt="walkleft2" data-name="walkleft2">
 </section>
+<section id="soundLoader" class="hidden">
+  <audio class="hidden" controls preload="auto" src="sounds/shot.wav" data-name="shot">Your browser does not support the audio element.</audio>
+</section>
 
 <main>
 <h1>007</h1>
@@ -38,9 +41,13 @@ The game screen appears here if your browser supports the Canvas API.
   <button type="button" id="pause">Pause</button>
 </section>
 
+<p>Sock, Gym Sock.</p>
+
+<p>My attempt at the James Bond opening sequence.</p>
+
 <h2>Attribution</h2>
 
-<p>Images licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/legalcode">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported</a>.</p>
+<p>Images and sound licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/legalcode">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported</a>.</p>
 
 </main>
 
@@ -143,10 +150,11 @@ function reset() {
 function stand() {
   bond.prefix = 'stand';
   bond.frameCount = 1;
-  clock.schedule(shoot, 1.5);
+  sounds.shot.play();
+  clock.schedule(bleed, 1.5);
 }
 
-function shoot() {
+function bleed() {
   blood.animation = animate(blood, (HEIGHT / WALK_RATE) / 4, {height: HEIGHT}, 'linear', move_barrel);
 }
 
@@ -180,6 +188,7 @@ function update(dt) {
 
 window.addEventListener('load', (event) => {
   images.LOAD('#imageLoader img');
+  sounds.LOAD('#soundLoader audio');
   reset();
   screen.set_mode('#screen', '#reset', '#pause');
 });
